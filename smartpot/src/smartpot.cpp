@@ -17,7 +17,7 @@ Adafruit_MQTT_Subscribe webButton = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME 
 Adafruit_MQTT_Publish bmeHumidity = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/humidity");
 Adafruit_MQTT_Publish bemAirpressure = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/airpressure");
 Adafruit_MQTT_Publish soilPin = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/analogsoilPin");
-Adafruit_MQTT_Publish bemTemp =Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/temperature");
+Adafruit_MQTT_Publish bemTemp = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/temperature");
 Adafruit_MQTT_Publish AirQuality = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feedsairqualitysensor");
 
 Adafruit_BME280 bme;
@@ -52,7 +52,7 @@ SerialLogHandler logHandler(LOG_LEVEL_INFO);
 
 void setup() {
 
-mqtt.subscribe(&webButton);
+
 Serial.begin(9600);
 waitFor(Serial.isConnected,10000);
 soilPinVal = analogRead(analogsoilPin);
@@ -84,7 +84,7 @@ display.printf( "BME280 at address %02x failed to start",0x76);
         display.printf("Sensor ERROR!");
     }
       Adafruit_MQTT_Subscribe *subscription;
-  while ((subscription = mqtt.readSubscription(100))) {
+    while ((subscription = mqtt.readSubscription(100))) {
     if(subscription == &webButton) {
       webButtonState = atoi((char *)webButton.lastread);
       Serial.printf("button value %i\n",webButtonState);
@@ -93,9 +93,12 @@ display.printf( "BME280 at address %02x failed to start",0x76);
     }
   }
 pinMode(D5,OUTPUT);
-  
+mqtt.subscribe(&webButton);
+
 }
   void loop() {
+     
+     
   display.setCursor(0,0);
   int quality = sensor.slope();
 
@@ -148,9 +151,10 @@ pinMode(D5,OUTPUT);
     delay(10000);
     //display.clearDisplay();
 
-    if(soilPinVal>=3078){
+    if(soilPinVal>=3000){
         digitalWrite(D5,HIGH);
-        pumpTimer.startTimer(1000);
+        pumpTimer.startTimer(2000
+        );
     }
 
    
