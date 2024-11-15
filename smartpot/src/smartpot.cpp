@@ -35,6 +35,7 @@ uint last;
 bool webButtonState;
 AirQualitySensor sensor(A0);
 int analogsoilPin=A1;
+int lastTime;
 int Val;
 int soilPinVal;
 void MQTT_connect();
@@ -151,6 +152,9 @@ mqtt.subscribe(&webButton);
     delay(10000);
     //display.clearDisplay();
 
+if(millis()- lastTime>10000){
+    lastTime = millis();
+
     if(soilPinVal>=3000){
         digitalWrite(D5,HIGH);
         pumpTimer.startTimer(2000
@@ -161,10 +165,11 @@ mqtt.subscribe(&webButton);
     else{
     digitalWrite(D5,LOW);
     }
-    if(pumpTimer.isTimerReady()){
+}
+   if (pumpTimer.isTimerReady()){
         digitalWrite(D5,LOW);
-    }
     
+    }
     
     //Serial.printf("SoilPinVal=%i,\n is adequate.",soilPinVal);
     //display.printf("SoilPinVal=%i,\n is adequate.",soilPinVal);
