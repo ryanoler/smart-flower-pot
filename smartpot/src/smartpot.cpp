@@ -1,10 +1,25 @@
 #include "Particle.h"
+#include <Adafruit_MQTT.h>
+#include "Adafruit_MQTT/Adafruit_MQTT_SPARK.h"
+#include "Adafruit_MQTT/Adafruit_MQTT.h"
+
 #include "IotClassroom_CNM.h"
 #include "Adafruit_BME280.h"
 #include "Adafruit_GFX.h"
 #include "Adafruit_SSD1306.h"
 #include "Grove_Air_Quality_Sensor.h"
 #include "IoTTimer.h"
+#include "credentials.h"
+
+TCPClient TheClient; 
+Adafruit_MQTT_SPARK mqtt(&TheClient,AIO_SERVER,AIO_SERVERPORT,AIO_USERNAME,AIO_KEY);
+Adafruit_MQTT_Subscribe webButton = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/buttonvalue"); 
+Adafruit_MQTT_Publish bmeHumidity = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/humidity");
+Adafruit_MQTT_Publish bemAirpressure = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/airpressure");
+Adafruit_MQTT_Publish soilPin = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/analogsoilPin");
+Adafruit_MQTT_Publish bemTemp =Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feeds/temperature");
+Adafruit_MQTT_Publish AirQuality = Adafruit_MQTT_Publish(&mqtt,AIO_USERNAME"/feedsairqualitysensor");
+
 Adafruit_BME280 bme;
 const int OLED_RESET=-1;
 Adafruit_SSD1306 display(OLED_RESET);
@@ -17,12 +32,15 @@ float inHg;
 bool status;
 uint CurrentTime;
 uint last;
+bool webButtonState;
 AirQualitySensor sensor(A0);
-
 int analogsoilPin=A1;
 int Val;
 int soilPinVal;
+void MQTT_connect();
+bool MQTT_ping();
 SYSTEM_MODE(SEMI_AUTOMATIC);
+
 
 
 
@@ -34,9 +52,9 @@ SerialLogHandler logHandler(LOG_LEVEL_INFO);
 
 void setup() {
 
+mqtt.subscribe(&webButton);
 Serial.begin(9600);
 waitFor(Serial.isConnected,10000);
-
 soilPinVal = analogRead(analogsoilPin);
 pinMode(analogsoilPin,INPUT);
 display.begin(SSD1306_SWITCHCAPVCC, 0x3c);
@@ -53,28 +71,39 @@ display.printf( "BME280 at address %02x failed to start",0x76);
     while (!Serial);
 
     Serial.println("Waiting sensor to init...");
+    display.println("Waiting sensor to init...");
+    display.display();
+
     delay(20000);
 
     if (sensor.init()) {
         Serial.println("Sensor ready.");
+        display.printf("Sensor ready.");
     } else {
         Serial.println("Sensor ERROR!");
+        display.printf("Sensor ERROR!");
     }
-
-
-
+      Adafruit_MQTT_Subscribe *subscription;
+  while ((subscription = mqtt.readSubscription(100))) {
+    if(subscription == &webButton) {
+      webButtonState = atoi((char *)webButton.lastread);
+      Serial.printf("button value %i\n",webButtonState);
+      digitalWrite(D5,webButtonState);
+              
+    }
+  }
 pinMode(D5,OUTPUT);
   
 }
-
-
-void loop() {
-
+  void loop() {
+  display.setCursor(0,0);
   int quality = sensor.slope();
 
-    Serial.print("Sensor value: ");
-    display.printf("Sensor value: ");
+    Serial.println("Sensor value: ");
     Serial.println(sensor.getValue());
+    display.display();
+    display.printf("Sensor value: ");
+   
     
 
     if (quality == AirQualitySensor::FORCE_SIGNAL) {
