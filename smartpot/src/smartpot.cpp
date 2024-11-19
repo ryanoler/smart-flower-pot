@@ -84,17 +84,11 @@ display.printf( "BME280 at address %02x failed to start",0x76);
         Serial.println("Sensor ERROR!");
         display.printf("Sensor ERROR!");
     }
-      Adafruit_MQTT_Subscribe *subscription;
-    while ((subscription = mqtt.readSubscription(100))) {
-    if(subscription == &webButton) {
-      webButtonState = atoi((char *)webButton.lastread);
-      Serial.printf("button value %i\n",webButtonState);
-      digitalWrite(D5,webButtonState);
-              
-    }
-  }
-pinMode(D5,OUTPUT);
-mqtt.subscribe(&webButton);
+
+    pinMode(D5,OUTPUT);
+    digitalWrite(D5,LOW);
+    pumpTimer.startTimer(20);
+    mqtt.subscribe(&webButton);
 
 }
   void loop() {
@@ -102,11 +96,11 @@ mqtt.subscribe(&webButton);
      
   display.setCursor(0,0);
   int quality = sensor.slope();
-
-    Serial.println("Sensor value: ");
-    Serial.println(sensor.getValue());
-    display.display();
-    display.printf("Sensor value: ");
+  Serial.println("Sensor value: ");
+        Serial.println(sensor.getValue());
+        display.display();
+        display.printf("Sensor value: ");
+      
    
     
 
@@ -125,7 +119,6 @@ mqtt.subscribe(&webButton);
         
     }
 
-    delay(1000);
 
     display.clearDisplay();
     display.setCursor(0,0);
@@ -149,23 +142,30 @@ mqtt.subscribe(&webButton);
     Serial.printf("temp Value = %0.1f --- pressure = %0.1f humidity=%0.1f---  moisture = %i\n",tempF,pressPA,humidRH,soilPinVal); 
     display.printf("temp Value = %0.1f --- pressure = %0.1f humidity=%0.1f---moisture = %i\n",tempF,pressPA,humidRH,soilPinVal); 
     display.display();
-    delay(10000);
     //display.clearDisplay();
+
+Adafruit_MQTT_Subscribe *subscription;
+    while ((subscription = mqtt.readSubscription(100))) {
+    if(subscription == &webButton) {
+      webButtonState = atoi((char *)webButton.lastread);
+      Serial.printf("button value %i\n",webButtonState);
+      digitalWrite(D5,webButtonState); 
+      pumpTimer.startTimer(500);       
+    }
+  }
 
 if(millis()- lastTime>10000){
     lastTime = millis();
 
     if(soilPinVal>=3000){
         digitalWrite(D5,HIGH);
-        pumpTimer.startTimer(2000
-        );
+        pumpTimer.startTimer(500);
     }
-
-   
     else{
     digitalWrite(D5,LOW);
     }
 }
+
    if (pumpTimer.isTimerReady()){
         digitalWrite(D5,LOW);
     
